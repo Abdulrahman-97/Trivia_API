@@ -5,3 +5,6 @@
 #add-form {
   text-align: center;
 }
+.button {
+  cursor: pointer;
+}

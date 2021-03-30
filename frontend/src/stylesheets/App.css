@@ -11,6 +11,7 @@
 
 .App-header > h1 {
   color: dodgerblue;
+  cursor: pointer;
 }
 
 .App-intro {
@@ -21,9 +22,15 @@ h2 {
   text-align: center;
 }
 
+h2.field {
+  text-align: center;
+  cursor: pointer;
+}
+
 li {
   text-align: center;
   margin: 5px 0px;
+  cursor: pointer;
 }
 
 ul {
