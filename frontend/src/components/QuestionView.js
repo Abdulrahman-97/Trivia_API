@@ -77,9 +77,9 @@ class QuestionView extends Component {
   }
 
   submitSearch = (searchTerm) => {
-    console.log(this.state.currentCategory)
+    var category = this.state.currentCategory ? this.state.currentCategory['id'] : null;
     $.ajax({
-      url: `/questions/search?category=${this.state.currentCategory['id']}`, //TODO: update request URL
+      url: `/questions/search?category=${category}`, //TODO: update request URL
       type: "POST",
       dataType: 'json',
       contentType: 'application/json',
@@ -91,8 +91,7 @@ class QuestionView extends Component {
       success: (result) => {
         this.setState({
           questions: result.questions,
-          totalQuestions: result.total_questions,
-          currentCategory: result.current_category })
+          totalQuestions: result.total_questions})
         return;
       },
       error: (error) => {
