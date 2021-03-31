@@ -170,15 +170,39 @@ def create_app(test_config=None):
   and shown whether they were correct or not. 
   '''
   @app.route('/quizzes', methods=['POST'])
-  def generate_quizzes():
-    previous_questions = request.get_json()['previous_questions']
-    quiz_category = request.get_json()['quiz_category']
-    questions = Question.query.filter(Question.category == quiz_category['id']).all()
-    print(previous_questions)
-    print(quiz_category)
+  def select_random_question():
+    data = request.get_json()
+    print(data, type(data))
+    if data is not None:
+      if ('previous_questions' or 'quiz_category') not in data.keys():
+        abort(400, f'{data},\'previous_questions\' and/or \'quiz_category\' are missing!')
+
+      previous_questions = data['previous_questions']
+      quiz_category = data['quiz_category']
+      
+      if quiz_category is None or not isinstance(quiz_category, dict):
+        abort(400, f'{data},\'quiz_category\' is None or not a dictionary!')
+      elif 'id' not in quiz_category.keys():
+        abort(400, f'{quiz_category}, \'id\' key is missing!')
+      elif type(quiz_category['id']) is not int:
+        abort(400, f'{quiz_category}, \'id\' is not an integer!')
+      elif quiz_category['id'] == 0:
+        question = Question.query\
+                  .filter(Question.id.notin_(previous_questions))\
+                  .order_by(func.random()).first()
+      else:
+        question = Question.query\
+                  .filter(Question.category == quiz_category['id'])\
+                  .filter(Question.id.notin_(previous_questions))\
+                  .order_by(func.random()).first()
+      
+      formatted_question = question.format() if question is not None else None
+    else:
+      abort(400, 'No data provided!')
 
     return jsonify({
-      
+      'success': True,
+      'question': formatted_question
     })
 
 
