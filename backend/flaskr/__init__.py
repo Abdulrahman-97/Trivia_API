@@ -2,6 +2,7 @@ import os
 from flask import Flask, request, abort, jsonify, request
 from flask_sqlalchemy import SQLAlchemy
 from flask_cors import CORS
+from sqlalchemy import func
 import random
 
 from models import setup_db, Question, Category
@@ -32,14 +33,18 @@ def create_app(test_config=None):
   '''
   @app.route('/categories', methods=['GET'])
   def get_categories():
+    # get all categories
     categories = Category.query.all()
+    # abort if no categories available
+    if not len(categories):
+      abort(404)
+    # format categories
     formatted_categories = {category.id: category.type for category in categories}
-    print(categories)
 
     return jsonify({
       'success': True,
       'categories': formatted_categories,
-      'total_questions': len(formatted_categories)
+      'total_categories': len(formatted_categories)
     })
 
   '''
@@ -56,18 +61,25 @@ def create_app(test_config=None):
   '''
   @app.route('/questions', methods=['GET'])
   def get_questions():
+    """
+    This function handles GET requests for /questions endpoint.
+    """
     # get all questions
     questions = Question.query.all()
-    print(len(questions))
+    # get requested page number
     page = request.args.get('page', 1, type=int)
+    # compute starting and ending question index 
     start = (page - 1) * QUESTIONS_PER_PAGE
     end = start + QUESTIONS_PER_PAGE
     # format questions for specific page
     formatted_questions = [question.format() for question in questions[start:end]]
+    if len(formatted_questions) == 0:
+      abort(404)
+
     # get all categories
     categories = Category.query.all()
+    # format categories
     formatted_categories = {category.id: category.type for category in categories}
-    # print(formatted_categories)
     current_category = None
     return jsonify({
       'success': True,
@@ -104,12 +116,15 @@ def create_app(test_config=None):
   '''
   @app.route('/questions', methods=['POST'])
   def add_question():
-    question = Question(request.get_json()['question'],
-                        request.get_json()['answer'],
-                        request.get_json()['category'],
-                        request.get_json()['difficulty'])
-    
-    question.insert()
+    if request.get_json() is not None:
+      question = Question(request.get_json()['question'],
+                          request.get_json()['answer'],
+                          request.get_json()['category'],
+                          request.get_json()['difficulty'])
+      
+      question.insert()
+    else:
+      abort(400)
 
     return jsonify({
       'success': True
@@ -128,14 +143,20 @@ def create_app(test_config=None):
   def search_questions():
     search_term = request.get_json()['searchTerm']
     current_category = request.args.get('category', None, type=int)
-    print(current_category)
-    questions = Question.query.filter(Question.question.ilike(f'%{search_term}%')).filter(Question.category == current_category).all()
+    
+    if current_category is None:
+      questions = Question.query\
+                  .filter(Question.question.ilike(f'%{search_term}%')).all()
+    else:
+      questions = Question.query\
+                  .filter(Question.question.ilike(f'%{search_term}%'))\
+                  .filter(Question.category == current_category).all()
+
     formatted_questions = [question.format() for question in questions]
     return jsonify({
       'success': True,
       'questions': formatted_questions,
-      'total_questions': len(formatted_questions),
-      'current_category': None
+      'total_questions': len(formatted_questions)
     })
   '''
   @TODO: 
